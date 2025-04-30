@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bytes.lookup | Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+                .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background-image: linear-gradient(rgb(46, 46, 46) 1px, transparent 1px),
+                              linear-gradient(90deg, rgb(78, 78, 78) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            animation: gridMove 13s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                transform: translate(-90px, -90px);
+            }
+        }
+
+        .switch {
+            font-size: 17px;
+            position: relative;
+            display: inline-block;
+            width: 3.5em;
+            height: 2em;
+            transform-style: preserve-3d;
+            perspective: 500px;
+            animation: toggle__animation 3s infinite;
+        }
+
+        .switch::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            filter: blur(20px);
+            z-index: 2;
+            border-radius: 50px;
+            background-color: #93c5fd;
+            background-image: radial-gradient(at 21% 46%, hsla(204, 70%, 70%, 1) 0px, transparent 50%),
+                              radial-gradient(at 23% 25%, hsla(217, 79%, 75%, 1) 0px, transparent 50%),
+                              radial-gradient(at 20% 1%, hsla(221, 83%, 79%, 1) 0px, transparent 50%),
+                              radial-gradient(at 86% 87%, hsla(207, 69%, 72%, 1) 0px, transparent 50%),
+                              radial-gradient(at 99% 41%, hsla(203, 72%, 80%, 1) 0px, transparent 50%),
+                              radial-gradient(at 55% 24%, hsla(199, 60%, 66%, 1) 0px, transparent 50%);
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* The slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ffffff;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 1.4em;
+            width: 1.4em;
+            left: 0.3em;
+            bottom: 0.35em;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: rgba(0, 0, 0, 0.17) 0px -10px 10px 0px inset,
+                        rgba(0, 0, 0, 0.09) 0px -1px 15px -8px;
+            background-color: #489dff;
+            background-image: radial-gradient(at 81% 39%, rgb(141, 210, 242) 0px, transparent 50%),
+                              radial-gradient(at 11% 72%, rgb(73, 188, 255) 0px, transparent 50%),
+                              radial-gradient(at 23% 20%, rgb(53, 181, 255) 0px, transparent 50%);
+        }
+
+        .input__check:checked + .slider {
+            background-color: #0f172a;
+        }
+
+        .input__check:checked + .slider:before {
+            transform: translateX(1.5em);
+        }
+
+        @keyframes toggle__animation {
+            0%,
+            100% {
+                transform: translateY(-10px) rotateX(15deg) rotateY(-20deg);
+            }
+
+            50% {
+                transform: translateY(0px) rotateX(15deg) rotateY(-20deg);
+            }
+        }
+
+        body {
+            background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.05) 100%),
+                              linear-gradient(to right, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.05) 100%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 0;
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #search-type-text {
+            animation: toggle__animation 3s infinite;
+        }
+
+        /* Dropdown styles */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            width: 200px;
+            background-color: rgba(17, 24, 39, 0.95);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transform-origin: top;
+            transform: scaleY(0);
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 50;
+        }
+
+        .dropdown-menu.show {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .dropdown-toggle {
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 0.5rem 0 0 0.5rem;
+            border: 1px dashed rgba(0, 146, 231);
+            border-right: none;
+            transition: all 0.2s ease;
+            height: 100%;
+        }
+
+        .dropdown-toggle:hover {
+            background-color: rgba(51, 65, 85, 0.8);
+        }
+
+        /* Search input styling */
+        .search-wrapper {
+            display: flex;
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 0 0.5rem 0.5rem 0;
+            border: 1px dashed rgba(0, 146, 231);
+            border-left: none;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+
+        /* Results container */
+        #results-container {
+            margin-top: 2rem;
+            padding: 2rem;
+            background-color: rgba(17, 24, 39, 0.7);
+            border-radius: 1rem;
+            border: 1px dashed rgb(0, 146, 231);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 2;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            width: 100%;
+            max-width: 80%;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Social card styles */
+        .social-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-card {
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+            animation: cardFadeIn 0.5s ease-in-out;
+        }
+
+        .social-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: rgba(59, 130, 246, 0.6);
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .social-platform {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .social-username {
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        .social-link {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background-color: rgba(59, 130, 246, 0.2);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #60a5fa;
+            transition: all 0.2s ease;
+            justify-content: center;
+        }
+
+        .social-link:hover {
+            background-color: rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        .results-info {
+            background-color: rgba(30, 41, 59, 0.5);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .highlight {
+            color: #93c5fd;
+            font-weight: 500;
+        }
+
+        .search-button {
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-button:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .search-button:active {
+            transform: translateY(0);
+        }
+
+        .logo-container {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .logo-text {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+        }
+
+        .logo-text::after {
+            content: "bytes.lookup";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            color: transparent;
+            filter: blur(10px);
+            opacity: 0.7;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            z-index: 1;
+        }
+
+        /* New blue button container styles */
+        .button-container {
+            display: flex;
+            background-color: #006effc9;
+            width: 250px;
+            height: 40px;
+            align-items: center;
+            justify-content: space-around;
+            border-radius: 10px;
+            box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px,
+                        rgba(0, 110, 255, 0.5) 5px 10px 15px;
+            margin: 20px auto; /* Centering the container */
+            padding: 0.5rem; /* Add some padding for the glow to be visible */
+            border: 0px solid rgba(255, 255, 255, 0.1); /* Add a border */
+            position: relative; /* Needed for absolute positioning of the glow */
+        }
+
+        .button-container::before {
+            content: "";
+            position: absolute;
+            top: -2px; /* Extend the glow slightly beyond the container */
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background-color: rgba(59, 130, 246, 0.5); /* Blue glow color */
+            border-radius: 12px; /* Match the container's borderRadius */
+            filter: blur(8px); /* Adjust the blur to control the glow intensity */
+            opacity: 0.7; /* Adjust opacity as needed */
+            z-index: 1; /* Place the glow behind the container */
+        }
+
+        .button {
+            outline: 0 !important;
+            border: 0 !important;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            transition: all ease-in-out 0.3s;
+            cursor: pointer;
+        }
+        .button:hover {
+            transform: translateY(-3px);
+        }
+        .icon {
+            font-size: 20px;
+        }
+
+        /* Download Dropdown Styles */
+        #download-dropdown {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 1; /* Ensure it's above other elements */
+        }
+
+        #download-dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.2rem 0.8rem;
+            background-color: rgba(30, 41, 59, 0.8);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border: 1px dashed rgba(0, 143, 231);
+        }
+
+        #download-dropdown-toggle:hover {
+            background-color: rgba(51, 65, 85, 0.8);
+        }
+
+        #download-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            width: 180px;
+            background-color: rgba(17, 24, 39, 0.95);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transform-origin: top;
+            transform: scaleY(0);
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 1;
+        }
+
+        #download-dropdown-menu.show {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+
+        .download-option {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: background-color 0.2s ease;
+            color: #fff;
+        }
+
+        .download-option:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .download-option i {
+            width: 1rem;
+            height: 1rem;
+        }
+
+    </style>
+</head>
+<body class="text-white">
+    <div class="grid-background"></div>
+
+    <main class="w-full max-w-2xl p-4 flex flex-col items-center">
+        <div class="button-container mb-6">
+            <button class="button">
+                <i class="fa-solid fa-house icon"></i>
+            </button>
+            <button class="button">
+                <i class="fa-solid fa-bolt icon"></i>
+            </button>
+            <button class="button">
+                <i class="fa-solid fa-user icon"></i>
+            </button>
+            <button class="button">
+                <i class="fab fa-telegram icon"></i>
+            </button>
+        </div>
+
+        <div class="logo-container">
+            <h1 class="logo-text">bytes.lookup</h1>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 w-full justify-center">
+            <div class="search-wrapper flex-grow">
+                <div class="dropdown">
+                    <div class="dropdown-toggle" id="search-type-dropdown">
+                        <i class="fas fa-envelope"></i>
+                        <span id="current-search-type">Email</span>
+                        <i class="fas fa-chevron-down ml-1"></i>
+                    </div>
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <div class="dropdown-item" data-value="email" data-icon="fa-envelope" data-placeholder="Enter email address (ex. johndoe@gmail.com)">
+                            <i class="fas fa-envelope"></i>
+                            <span>Email</span>
+                        </div>
+                        <div class="dropdown-item" data-value="username" data-icon="fa-user" data-placeholder="Enter username (ex. johndoeplayz)">
+                            <i class="fas fa-user"></i>
+                            <span>Username</span>
+                        </div>
+                        <div class="dropdown-item" data-value="phone" data-icon="fa-phone" data-placeholder="Enter phone number (ex. 123-456-7890)">
+                            <i class="fas fa-phone"></i>
+                            <span>Phone Number</span>
+                        </div>
+                        <div class="dropdown-item" data-value="fullname" data-icon="fa-id-card" data-placeholder="Enter full name (ex. John K Doe)">
+                            <i class="fas fa-id-card"></i>
+                            <span>Full Name</span>
+                        </div>
+                        <div class="dropdown-item" data-value="ip" data-icon="fa-network-wired" data-placeholder="Enter IP Address (ex. 23.654.523.65)">
+                            <i class="fas fa-network-wired"></i>
+                            <span>IP Address</span>
+                        </div>
+                    </div>
+                </div>
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Enter email address (ex. johndoe@gmail.com)"
+                    class="search-input"
+                />
+            </div>
+
+            <div class="flex flex-col items-center">
+                <span id="search-type-text" class="mb-1 text-sm text-gray-300">Breach Search</span>
+                <label class="switch">
+                    <input type="checkbox" id="search-toggle" class="input__check">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <button id="search-button" class="search-button">
+                <i class="fas fa-search"></i>
+                <span>Search</span>
+            </button>
+        </div>
+
+
+    </main>
+
+    <div id="results-container" class="w-full">
+        <div class="flex justify-between items-start mb-4">
+            <h2 class="text-2xl font-bold">Search Results</h2>
+             <div id="download-dropdown" class="relative">
+                <div id="download-dropdown-toggle">
+                    <i class="fas fa-download"></i>
+                    <span>Download</span>
+                    <i class="fas fa-chevron-down ml-1"></i>
+                </div>
+                <div id="download-dropdown-menu" class="absolute hidden">
+                    <div class="download-option" data-format="txt">
+                        <i class="far fa-file-alt"></i>
+                        <span>Download as .txt</span>
+                    </div>
+                    <div class="download-option" data-format="json">
+                        <i class="fas fa-file-code"></i>
+                        <span>Download as .json</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="results-content">
+            <p>No results to display yet. Please perform a search.</p>
+        </div>
+    </div>
+
+    <script>
+        const searchToggle = document.getElementById('search-toggle');
+        const searchTypeText = document.getElementById('search-type-text');
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsContent = document.getElementById('results-content');
+        const dropdownToggle = document.getElementById('search-type-dropdown');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const currentSearchType = document.getElementById('current-search-type');
+
+        // Download elements
+        const downloadDropdownToggle = document.getElementById('download-dropdown-toggle');
+        const downloadDropdownMenu = document.getElementById('download-dropdown-menu');
+        const downloadOptions = document.querySelectorAll('.download-option');
+
+        // Default search type
+        let selectedSearchType = {
+            value: 'email',
+            icon: 'fa-envelope',
+            placeholder: 'Enter email address (ex. johndoe@gmail.com)'
+        };
+
+        // Initialize with default placeholder
+        searchInput.placeholder = selectedSearchType.placeholder;
+
+        // Toggle dropdown menu
+        dropdownToggle.addEventListener('click', function() {
+            dropdownMenu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        // Handle dropdown item selection
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                const icon = this.getAttribute('data-icon');
+                const placeholder = this.getAttribute('data-placeholder');
+                
+                // Update dropdown toggle
+                currentSearchType.textContent = this.querySelector('span').textContent;
+                dropdownToggle.querySelector('i:first-child').className = `fas ${icon}`;
+                
+                // Update selected search type
+                selectedSearchType = { value, icon, placeholder };
+                
+                // Update input placeholder
+                searchInput.placeholder = placeholder;
+                
+                // Close dropdown
+                dropdownMenu.classList.remove('show');
+            });
+        });
+
+        // Toggle search type
+        searchToggle.addEventListener('change', function () {
+            if (this.checked) {
+                searchTypeText.textContent = 'Real-Time Search';
+            } else {
+                searchTypeText.textContent = 'Breach Search';
+            }
+        });
+
+        // Handle search button click
+        searchButton.addEventListener('click', function () {
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm === "") {
+                resultsContent.innerHTML = "<p class='text-center text-red-400'>Please enter a search term.</p>";
+                resultsContainer.style.display = "block";
+                return;
+            }
+
+            if (searchToggle.checked) {
+                // Real-Time Search with enhanced results
+                const mockRealTimeData = {
+                    fullName: "John Doe",
+                    email: searchTerm,
+                    phoneNumbers: ["123-456-7890", "987-654-3210"],
+                    ipAddresses: ["192.168.1.1", "10.0.0.5"],
+                    socialMedia: [
+                        { platform: "Twitter", username: "johndoe", url: "https://twitter.com/johndoe" },
+                        { platform: "Instagram", username: "johndoe123", url: "https://instagram.com/johndoe123" },
+                        { platform: "LinkedIn", username: "john-doe-profile", url: "https://linkedin.com/in/john-doe-profile" }
+                    ]
+                };
+
+                let resultsHTML = `
+                    <div class="results-info">
+                        <h3 class="text-lg font-semibold mb-2">Real-Time Search Results</h3>
+                        <p>Searching for <span class="highlight">${searchTerm}</span> (${selectedSearchType.value})</p>
+                         <p class="text-sm mt-2">Possible location: <span class="highlight">Springfield, USA</span></p>
+                    </div>
+                    <div class="bg-gray-800 bg-opacity-90 p-4 rounded-lg border border-gray-700 mb-4">
+                        <h4 class="text-md font-semibold mb-2">Personal Information</h4>
+                        <p>Full Name: <span class="text-gray-300">${mockRealTimeData.fullName}</span></p>
+                        <p>Email: <span class="text-gray-300">${mockRealTimeData.email}</span></p>
+                        <p>Phone Numbers: <span class="text-gray-300">${mockRealTimeData.phoneNumbers.join(", ")}</span></p>
+                        <p>IP Addresses: <span class="text-gray-300">${mockRealTimeData.ipAddresses.join(", ")}</span></p>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Social Media Profiles</h3>
+                    <div class="social-cards-container">
+                `;
+
+                mockRealTimeData.socialMedia.forEach(social => {
+                    resultsHTML += `
+                        <div class="social-card">
+                            <div class="social-platform">
+                                <i class="fab ${social.platform === 'Twitter' ? 'fa-twitter' :
+                                                social.platform === 'Instagram' ? 'fa-instagram' :
+                                                'fa-linkedin' ? 'fa-linkedin' : ''}"
+                                    style="color: ${social.platform === 'Twitter' ? '#1DA1F2' :
+                                                    social.platform === 'Instagram' ? '#E1306C' :
+                                                    'LinkedIn' ? '#0077B5' : '#000'}"></i>
+                                <span class="font-medium">${social.platform}</span>
+                            </div>
+                            <div class="social-username">${social.username}</div>
+                            <a href="${social.url}" class="social-link" target="_blank" rel="noopener noreferrer">
+                                <i class="fas fa-external-link-alt"></i>
+                                <span>View Profile</span>
+                            </a>
+                        </div>
+                    `;
+                });
+
+                resultsHTML += `</div>`;
+                resultsContent.innerHTML = resultsHTML;
+
+            } else {
+                // Breach Search
+                let resultsHTML = `
+                    <div class="results-info">
+                        <h3 class="text-lg font-semibold mb-2">Breach Search Results</h3>
+                        <p>Searching for <span class="highlight">${searchTerm}</span> (${selectedSearchType.value})</p>
+                    </div>
+                    <div class="bg-blue-900 bg-opacity-20 p-4 rounded-lg border border-blue-800">
+                        <h3 class="text-xl font-semibold mb-3">Data Breaches Found</h3>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">data_leak_2021</span>
+                                    <p class="text-sm text-gray-300">Compromised data: <span class="highlight">email, password, username, phone</span></p>
+                                    <p class="text-sm text-gray-300">Date: <span class="highlight">2021-05-15</span></p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">major_breach_2023</span>
+                                    <p class="text-sm text-gray-300">Compromised data: <span class="highlight">phone, email, address, full name, IP address</span></p>
+                                    <p class="text-sm text-gray-300">Date: <span class="highlight">2023-03-22</span></p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+                resultsContent.innerHTML = resultsHTML;
+            }
+
+            resultsContainer.style.display = "block";
+            searchInput.value = "";
+        });
+
+        // Download Dropdown
+        downloadDropdownToggle.addEventListener('click', () => {
+            downloadDropdownMenu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!downloadDropdownToggle.contains(event.target) && !downloadDropdownMenu.contains(event.target)) {
+                downloadDropdownMenu.classList.remove('show');
+            }
+        });
+
+        downloadOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const format = this.getAttribute('data-format');
+                let results = resultsContent.innerHTML;
+
+                 // Basic text extraction (remove HTML tags, newlines)
+                const textContent = results.replace(/<[^>]*>?/gm, '').replace(/\n/g, ' ');
+
+                if (format === 'txt') {
+                    downloadText(textContent, 'search_results.txt');
+                } else if (format === 'json') {
+                    // Attempt to create a JSON object.  If the HTML content
+                    // isn't easily convertible, we'll just wrap the text.
+                    let jsonData;
+                    try {
+                        jsonData = JSON.parse(textContent);
+                    } catch (e) {
+                        jsonData = { results: textContent };
+                    }
+                    downloadJson(jsonData, 'search_results.json');
+                }
+                downloadDropdownMenu.classList.remove('show');
+            });
+        });
+
+        function downloadText(text, filename) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadJson(obj, filename) {
+            const json = JSON.stringify(obj, null, 2); // Pretty print JSON
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
